@@ -15,31 +15,33 @@ namespace FaceTutorial
 {
     public partial class MainWindow : Window
     {
-        // Replace <SubscriptionKey> with your valid subscription key.
-        // For example, subscriptionKey = "0123456789abcdef0123456789ABCDEF"
-        private const string subscriptionKey = "f510168f32d9405ab5bf3ce887f8b89a";
+        // Substitua <SubscriptionKey> pela sua chave de assinatura válida.
+        // Por exemplo, subscriptionKey = "0123456789abcdef0123456789ABCDEF"
+        private const string subscriptionKey = "<Coloque aqui sua key>";
 
-        // Replace or verify the region.
+        // Substitua ou verifique a região.
         //
-        // You must use the same region as you used to obtain your subscription
-        // keys. For example, if you obtained your subscription keys from the
-        // westus region, replace "Westcentralus" with "Westus".
+        // Você deve usar a mesma região que usou para obter sua assinatura
+        // chaves. Por exemplo, se você obteve suas chaves de assinatura do
+        // região westus, substitua "Westcentralus" por "Westus".
         //
-        // NOTE: Free trial subscription keys are generated in the westcentralus
-        // region, so if you are using a free trial subscription key, you should
-        // not need to change this region.
+        // NOTA: As chaves de assinatura de teste gratuito são geradas no westcentralus
+        // região, então se você estiver usando uma chave de assinatura de teste gratuito, você deve
+        // não precisa mudar esta região.
         private const string faceEndpoint =
-            "https://teste-deteccao.cognitiveservices.azure.com/";
+            "<Coloque aqui seu link do Face API>";
 
         private readonly IFaceClient faceClient = new FaceClient(
             new ApiKeyServiceClientCredentials(subscriptionKey),
             new System.Net.Http.DelegatingHandler[] { });
 
-        // The list of detected faces.
+        // A lista de rostos detectados.
         private IList<DetectedFace> faceList;
-        // The list of descriptions for the detected faces.
+
+        // A lista de descrições dos rostos detectados.
         private string[] faceDescriptions;
-        // The resize factor for the displayed image.
+
+        // O fator de redimensionamento da imagem exibida.
         private double resizeFactor;
 
         private const string defaultStatusBarText =
@@ -61,22 +63,22 @@ namespace FaceTutorial
             }
         }
 
-        // Displays the image and calls UploadAndDetectFaces.
+        // Exibe a imagem e chama UploadAndDetectFaces.
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
-            // Get the image file to scan from the user.
+            // Obtenha o arquivo de imagem a ser digitalizado do usuário.
             var openDlg = new Microsoft.Win32.OpenFileDialog();
 
             openDlg.Filter = "JPEG Image(*.jpg)|*.jpg";
             bool? result = openDlg.ShowDialog(this);
 
-            // Return if canceled.
+            // Retorna se cancelado.
             if (!(bool)result)
             {
                 return;
             }
 
-            // Display the image file.
+            // Exibe o arquivo de imagem.
             string filePath = openDlg.FileName;
 
             Uri fileUri = new Uri(filePath);
@@ -89,7 +91,7 @@ namespace FaceTutorial
 
             FacePhoto.Source = bitmapSource;
 
-            // Detect any faces in the image.
+            // Detecta qualquer rosto na imagem.
             Title = "Detectando imagem...";
             faceList = await UploadAndDetectFaces(filePath);
             Title = String.Format(
@@ -97,13 +99,14 @@ namespace FaceTutorial
 
             if (faceList.Count > 0)
             {
-                // Prepare to draw rectangles around the faces.
+                // Prepare-se para desenhar retângulos ao redor dos rostos.
                 DrawingVisual visual = new DrawingVisual();
                 DrawingContext drawingContext = visual.RenderOpen();
                 drawingContext.DrawImage(bitmapSource,
                     new Rect(0, 0, bitmapSource.Width, bitmapSource.Height));
                 double dpi = bitmapSource.DpiX;
-                // Some images don't contain dpi info.
+
+                // Algumas imagens não contêm informações de dpi.
                 resizeFactor = (dpi == 0) ? 1 : 96 / dpi;
                 faceDescriptions = new String[faceList.Count];
 
@@ -111,7 +114,7 @@ namespace FaceTutorial
                 {
                     DetectedFace face = faceList[i];
 
-                    // Draw a rectangle on the face.
+                    // Desenhe um retângulo no rosto.
                     drawingContext.DrawRectangle(
                         Brushes.Transparent,
                         new Pen(Brushes.Red, 2),
@@ -123,13 +126,13 @@ namespace FaceTutorial
                             )
                     );
 
-                    // Store the face description.
+                    // Armazena a descrição do rosto.
                     faceDescriptions[i] = FaceDescription(face);
                 }
 
                 drawingContext.Close();
 
-                // Display the image with the rectangle around the face.
+                // Exibe a imagem com o retângulo ao redor do rosto.
                 RenderTargetBitmap faceWithRectBitmap = new RenderTargetBitmap(
                     (int)(bitmapSource.PixelWidth * resizeFactor),
                     (int)(bitmapSource.PixelHeight * resizeFactor),
@@ -140,28 +143,28 @@ namespace FaceTutorial
                 faceWithRectBitmap.Render(visual);
                 FacePhoto.Source = faceWithRectBitmap;
 
-                // Set the status bar text.
+                // Defina o texto da barra de status.
                 faceDescriptionStatusBar.Text = defaultStatusBarText;
             }
         }
 
-        // Displays the face description when the mouse is over a face rectangle.
+        // Exibe a descrição da face quando o mouse está sobre um retângulo de face.
         private void FacePhoto_MouseMove(object sender, MouseEventArgs e)
         {
-            // If the REST call has not completed, return.
+            // Se a chamada REST não foi concluída, retorne.
             if (faceList == null)
                 return;
 
-            // Find the mouse position relative to the image.
+            // Encontre a posição do mouse em relação à imagem.
             Point mouseXY = e.GetPosition(FacePhoto);
 
             ImageSource imageSource = FacePhoto.Source;
             BitmapSource bitmapSource = (BitmapSource)imageSource;
 
-            // Scale adjustment between the actual size and displayed size.
+            // Ajuste de escala entre o tamanho real e o tamanho exibido.
             var scale = FacePhoto.ActualWidth / (bitmapSource.PixelWidth / resizeFactor);
 
-            // Check if this mouse position is over a face rectangle.
+            // Verifique se a posição do mouse está sobre um retângulo de face.
             bool mouseOverFace = false;
 
             for (int i = 0; i < faceList.Count; ++i)
@@ -172,7 +175,7 @@ namespace FaceTutorial
                 double width = fr.Width * scale;
                 double height = fr.Height * scale;
 
-                // Display the face description if the mouse is over this face rectangle.
+                // Exibe a descrição da face se o mouse estiver sobre este retângulo de face.
                 if (mouseXY.X >= left && mouseXY.X <= left + width &&
                     mouseXY.Y >= top && mouseXY.Y <= top + height)
                 {
@@ -182,14 +185,14 @@ namespace FaceTutorial
                 }
             }
 
-            // String to display when the mouse is not over a face rectangle.
+            // String a ser exibida quando o mouse não está sobre um retângulo de face.
             if (!mouseOverFace) faceDescriptionStatusBar.Text = defaultStatusBarText;
         }
 
-        // Uploads the image file and calls DetectWithStreamAsync.
+        // Carrega o arquivo de imagem e chama DetectWithStreamAsync.
         private async Task<IList<DetectedFace>> UploadAndDetectFaces(string imageFilePath)
         {
-            // The list of Face attributes to return.
+            // A lista de atributos de Face a serem retornados.
             IList<FaceAttributeType> faceAttributes =
                 new FaceAttributeType[]
                 {
@@ -198,26 +201,26 @@ namespace FaceTutorial
                     FaceAttributeType.Glasses, FaceAttributeType.Hair
                 };
 
-            // Call the Face API.
+            // Chame a API Face.
             try
             {
                 using (Stream imageFileStream = File.OpenRead(imageFilePath))
                 {
-                    // The second argument specifies to return the faceId, while
-                    // the third argument specifies not to return face landmarks.
+                    // O segundo argumento especifica o retorno do faceId, enquanto
+                    // o terceiro argumento especifica para não retornar os pontos de referência do rosto.
                     IList<DetectedFace> faceList =
                         await faceClient.Face.DetectWithStreamAsync(
                             imageFileStream, true, false, faceAttributes);
                     return faceList;
                 }
             }
-            // Catch and display Face API errors.
+            // Capture e exiba erros da API Face.
             catch (APIErrorException f)
             {
                 MessageBox.Show(f.Message);
                 return new List<DetectedFace>();
             }
-            // Catch and display all other errors.
+            // Capture e exiba todos os outros erros.
             catch (Exception e)
             {
                 MessageBox.Show(e.Message, "Error");
@@ -225,7 +228,7 @@ namespace FaceTutorial
             }
         }
 
-        // Creates a string out of the attributes describing the face.
+        // Cria uma string com os atributos que descrevem o rosto.
         private string FaceDescription(DetectedFace face)
         {
             string sexo = "";
@@ -248,7 +251,7 @@ namespace FaceTutorial
 
             sb.Append("Sexo: ");
 
-            // Add the gender, age, and smile.
+            // Adicione o sexo, idade e sorriso.
             sb.Append(sexo);
             sb.Append("\n");
             sb.Append("\n");
@@ -261,7 +264,7 @@ namespace FaceTutorial
             sb.Append("\n");
             sb.Append("\n");
 
-            // Add the emotions. Display all emotions over 10%.
+            // Adicione as emoções. Exiba todas as emoções acima de 10%.
             sb.Append("Emoção: ");
             Emotion emotionScores = face.FaceAttributes.Emotion;
             if (emotionScores.Anger >= 0.1f) sb.Append(
@@ -303,9 +306,10 @@ namespace FaceTutorial
             }
 
 
-            // Add glasses.
+            // Adicione os óculos.
             sb.Append(olhos);
 
+            // Retorna a string construída.
             return sb.ToString();
         }
     }
